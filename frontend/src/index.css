@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Premium navy + gold palette mapped to shadcn variables */
+    --background: 36 24% 97%;          /* #F8F7F4 */
+    --foreground: 240 28% 14%;         /* #1A1A2E */
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 28% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 28% 14%;
+
+    --primary: 213 56% 23%;            /* #1B3A5C navy */
+    --primary-foreground: 36 24% 97%;
+
+    --secondary: 38 28% 92%;
+    --secondary-foreground: 240 28% 14%;
+
+    --muted: 38 20% 94%;
+    --muted-foreground: 220 10% 40%;
+
+    --accent: 40 58% 58%;              /* #D4A853 gold */
+    --accent-foreground: 240 28% 14%;
+
+    --destructive: 7 60% 43%;          /* #B03A2E */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 33 18% 86%;              /* #E2DDD6 */
+    --input: 33 18% 86%;
+    --ring: 213 56% 23%;
+
+    --chart-1: 213 56% 23%;
+    --chart-2: 40 58% 58%;
+    --chart-3: 145 47% 33%;
+    --chart-4: 28 65% 47%;
+    --chart-5: 220 10% 40%;
+
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: 222 35% 10%;
+    --foreground: 36 24% 97%;
+    --card: 222 30% 14%;
+    --card-foreground: 36 24% 97%;
+    --popover: 222 30% 14%;
+    --popover-foreground: 36 24% 97%;
+    --primary: 40 58% 58%;
+    --primary-foreground: 240 28% 14%;
+    --secondary: 222 20% 22%;
+    --secondary-foreground: 36 24% 97%;
+    --muted: 222 20% 22%;
+    --muted-foreground: 220 12% 70%;
+    --accent: 40 58% 58%;
+    --accent-foreground: 240 28% 14%;
+    --destructive: 7 60% 43%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 20% 24%;
+    --input: 222 20% 24%;
+    --ring: 40 58% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-surface text-ink font-sans;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+  h1, h2, h3, h4, h5 {
+    @apply font-display tracking-tight text-ink;
+  }
+}
+
+@layer components {
+  .card-premium {
+    @apply bg-surface-card border border-line rounded-lg shadow-card;
+  }
+  .input-premium {
+    @apply w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-navy/40 focus:border-navy transition;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-navy text-white px-4 py-2.5 text-sm font-medium shadow-soft hover:bg-navy-500 active:bg-navy-700 transition disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-gold text-navy-800 px-4 py-2.5 text-sm font-semibold shadow-gold hover:bg-gold-300 active:bg-gold-500 transition;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-transparent text-ink px-4 py-2.5 text-sm font-medium hover:bg-surface-muted transition;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-line bg-white text-ink px-4 py-2.5 text-sm font-medium hover:border-navy hover:text-navy transition;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-danger text-white px-4 py-2.5 text-sm font-medium hover:bg-danger/90 transition;
+  }
+  .badge-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd0d8; border-radius: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #9ea4b1; }
+}
+
+/* FullCalendar custom tweaks */
+.fc { font-family: 'DM Sans', sans-serif; }
+.fc .fc-toolbar-title { font-family: 'Playfair Display', serif; color: #1B3A5C; }
+.fc .fc-button-primary { background: #1B3A5C; border-color: #1B3A5C; }
+.fc .fc-button-primary:not(:disabled):hover { background: #142C46; border-color: #142C46; }
+.fc .fc-button-primary:not(:disabled).fc-button-active { background: #D4A853; border-color: #D4A853; color: #1A1A2E; }
+.fc-event { border-radius: 6px; padding: 2px 6px; cursor: pointer; }

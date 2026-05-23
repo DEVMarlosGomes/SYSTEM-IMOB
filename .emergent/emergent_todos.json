@@ -1,0 +1,50 @@
+[
+  {
+    "content": "Phase 1: All foundation complete (Vite+TS+Tailwind+Backend+Seed)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Frontend infra + Layout + Routes + Login - all wired",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Auth + Dashboards (Admin/Corretor/Superadmin) - working",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Imoveis CRUD + privacy + 3-step form + photo upload - working",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Agenda FullCalendar + conflict detection - working",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: CRM Locatarios + Locadores - working",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Financeiro Kanban + comprovantes + repasses - working",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Portal Locatario (PIX, pagamentos, upload) - working",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Portal Locador + chat realtime WebSocket - working",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Contratos list + PDF generation - working",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: All 5 profiles tested visually - working",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: End-to-end testing com testing_agent_v3 + bug fixes",
+    "status": "in_progress"
+  }
+]
