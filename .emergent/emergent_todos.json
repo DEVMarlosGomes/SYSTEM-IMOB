@@ -40,11 +40,7 @@
     "status": "completed"
   },
   {
-    "content": "Phase 2: All 5 profiles tested visually - working",
+    "content": "Phase 2: All user stories covered + E2E testing - 98% pass rate, 1 minor bug fixed",
     "status": "completed"
-  },
-  {
-    "content": "Phase 2: End-to-end testing com testing_agent_v3 + bug fixes",
-    "status": "in_progress"
   }
 ]
