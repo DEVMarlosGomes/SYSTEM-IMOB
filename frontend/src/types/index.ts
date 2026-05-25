@@ -4,8 +4,8 @@ export type Role = 'superadmin' | 'admin' | 'corretor' | 'locatario' | 'locador'
 export type PropertyStatus = 'disponivel' | 'indisponivel' | 'alugado'
 export type PropertyType = 'apartamento' | 'casa' | 'comercial' | 'terreno' | 'sala' | 'galpao'
 export type ContractStatus = 'ativo' | 'encerrado' | 'rescindido'
-export type PaymentStatusLocatario = 'pendente' | 'comprovante_enviado' | 'pago' | 'atrasado'
-export type PaymentStatusLocador = 'em_esteira' | 'gerando_impostos' | 'pago'
+export type PaymentStatusLocatario = 'pendente' | 'comprovante_enviado' | 'pago' | 'atrasado' | 'rejeitado'
+export type PaymentStatusLocador = 'em_esteira' | 'gerando_impostos' | 'enviado' | 'pago'
 export type AppointmentStatus = 'agendado' | 'realizado' | 'cancelado'
 export type TipoConta = 'corrente' | 'poupanca'
 
@@ -19,6 +19,47 @@ export interface User {
   tenant_id?: string | null
   active?: boolean
   corretor_id?: string | null
+  creci_sp?: string | null
+  instagram?: string | null
+}
+
+export type ComissaoStatus = 'pendente' | 'pago'
+export type TipoComissao = 'locacao' | 'captacao' | 'gerencia' | 'premiacao'
+
+export interface Comissao {
+  id: string
+  tenant_id: string
+  corretor_id: string
+  contrato_id?: string | null
+  imovel_id?: string | null
+  tipo: TipoComissao
+  descricao: string
+  percentual?: number | null
+  valor_base?: number | null
+  valor: number
+  mes_referencia: string
+  data_prevista: string
+  data_pagamento?: string | null
+  status: ComissaoStatus
+  observacoes?: string | null
+  created_at?: string
+}
+
+export interface CorretorStats {
+  corretor: User
+  kpis: {
+    imoveis_captados: number
+    imoveis_alugados: number
+    imoveis_disponiveis: number
+    agendamentos_total: number
+    agendamentos_realizados: number
+    agendamentos_pendentes: number
+    agendamentos_cancelados: number
+    comissao_pendente: number
+    comissao_paga: number
+  }
+  comissao_mensal: { mes: string; pendente: number; pago: number }[]
+  agendamentos_recentes: Appointment[]
 }
 
 export interface Tenant {
@@ -42,6 +83,7 @@ export interface OwnerProfile {
   rg?: string | null
   telefone?: string | null
   email?: string | null
+  profissao?: string | null
   endereco?: string | null
   banco?: string | null
   agencia?: string | null
@@ -60,19 +102,101 @@ export interface Property {
   descricao?: string | null
   tipo: PropertyType
   status: PropertyStatus
+  // Ficha Captação
+  finalidade?: string | null
+  categoria?: string | null
+  situacao_imovel?: string | null
+  // Endereço
   endereco: string
+  numero?: string | null
+  complemento?: string | null
+  lote?: string | null
+  quadra?: string | null
   bairro?: string | null
   cidade?: string | null
+  uf?: string | null
   cep?: string | null
+  // Construção
+  ano_construcao?: number | null
+  construtora?: string | null
+  tipo_construcao?: string | null
+  pavimentos?: number | null
+  face?: string | null
+  posicao?: string | null
+  // Medidas
+  medidas_x?: number | null
+  medidas_y?: number | null
   area_m2?: number | null
+  area_construida?: number | null
+  area_terreno?: number | null
+  area_total?: number | null
+  // Cômodos
   quartos?: number | null
   banheiros?: number | null
   vagas?: number | null
+  garagem_tipo?: string | null
+  // Valores
   valor_aluguel: number
+  valor_venda?: number | null
   valor_condominio?: number | null
   valor_iptu?: number | null
+  exclusividade?: boolean
+  exclusividade_data?: string | null
+  financia?: boolean
+  // Flags
   aceita_pet?: boolean
   mobiliado?: boolean
+  placa?: boolean
+  placa_padrao?: string | null
+  placa_localizacao?: string | null
+  // Infraestrutura
+  energia_empresa?: string | null
+  energia_instalacao?: string | null
+  gas_empresa?: string | null
+  gas_instalacao?: string | null
+  agua_empresa?: string | null
+  agua_rgi?: string | null
+  agua_fornecimento?: string | null
+  // Documentação
+  cadastro_prefeitura?: string | null
+  cartorio_imoveis?: string | null
+  documentacao?: string | null
+  local_chaves?: string | null
+  // Dependências
+  dep_dormitorios?: number
+  dep_suites?: number
+  dep_armarios_planejados?: boolean
+  dep_closet?: boolean
+  dep_suite_master?: boolean
+  dep_sala?: boolean
+  dep_sala_2_ambientes?: boolean
+  dep_sala_jantar?: boolean
+  dep_sala_estar?: boolean
+  dep_sala_tv?: boolean
+  dep_varanda?: boolean
+  dep_banheiros?: number
+  dep_arm_banheiros?: boolean
+  dep_box_banheiros?: boolean
+  dep_lavabos?: number
+  dep_banheiro_empregada?: boolean
+  dep_cozinha?: boolean
+  dep_cozinha_planejada?: boolean
+  dep_despensa?: boolean
+  dep_area_servico?: boolean
+  dep_empregada?: boolean
+  dep_quintal_privativo?: boolean
+  dep_varanda_gourmet?: boolean
+  // Pisos
+  piso_dormitorios?: string | null
+  piso_sala?: string | null
+  piso_banheiros?: string | null
+  piso_cozinha?: string | null
+  piso_quintal?: string | null
+  // Listas
+  perto_de?: string[]
+  amenidades?: string[]
+  // Misc
+  observacoes?: string | null
   fotos: string[]
   created_at?: string
   corretor?: { id: string; nome: string; telefone?: string | null; avatar_url?: string | null; email?: string }
@@ -133,6 +257,7 @@ export interface Payment {
   comprovante_locador_url?: string | null
   data_repasse_prevista?: string | null
   observacoes?: string | null
+  motivo_rejeicao?: string | null
   locatario?: User
   locador?: User
   contract?: Contract
@@ -202,10 +327,35 @@ export interface CRMLocatario extends User {
   contract?: Contract | null
   property?: Property | null
   last_payment?: Payment | null
+  cpf?: string | null
+  meses_atraso?: number
+  dias_para_vencer?: number | null
 }
 
 export interface CRMLocador extends User {
   contract?: Contract | null
   property?: Property | null
   last_payout?: Payment | null
+  banco?: string | null
+  pix?: string | null
+  taxa_adm?: number
+  valor_liquido?: number
+}
+
+export type NotificationType =
+  | 'comprovante_enviado'
+  | 'pagamento_aprovado'
+  | 'contrato_criado'
+  | 'info'
+
+export interface Notification {
+  id: string
+  tenant_id: string
+  recipient_id: string
+  type: NotificationType
+  title: string
+  body: string
+  lida: boolean
+  link?: string | null
+  created_at: string
 }

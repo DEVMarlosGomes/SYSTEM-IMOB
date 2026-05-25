@@ -1,4 +1,4 @@
-export const APP_NAME = 'ImobSys'
+export const APP_NAME = 'ImobVip'
 
 export const ROLE_OPTIONS = [
   { value: 'admin', label: 'Administrador' },

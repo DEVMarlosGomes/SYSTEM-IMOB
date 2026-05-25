@@ -17,6 +17,7 @@ from core import (
     serialize,
 )
 from models import Contract, ContractCreate, Payment
+from routes.notifications import create_notification
 
 router = APIRouter(prefix="/contracts", tags=["contracts"])
 
@@ -153,6 +154,26 @@ async def create_contract(payload: ContractCreate, current: AuthUser = Depends(r
             {"$setOnInsert": pay},
             upsert=True,
         )
+    # Notify locatário and locador about the new contract
+    locatario_user = await db.users.find_one({"id": payload.locatario_id}, {"_id": 0, "nome": 1})
+    locatario_nome = (locatario_user or {}).get("nome", "Locatário")
+    prop_titulo = prop.get("titulo", "imóvel")
+    await create_notification(
+        tenant_id=current.tenant_id,
+        recipient_id=payload.locatario_id,
+        type="contrato_criado",
+        title="Contrato criado",
+        body=f"Seu contrato de locação para {prop_titulo} foi criado. Início: {payload.data_inicio}.",
+        link="/locatario/pagamentos",
+    )
+    await create_notification(
+        tenant_id=current.tenant_id,
+        recipient_id=payload.locador_id,
+        type="contrato_criado",
+        title="Contrato criado",
+        body=f"Novo contrato para {prop_titulo} com {locatario_nome}. Início: {payload.data_inicio}.",
+        link="/locador/portal",
+    )
     return serialize(contract)
 
 

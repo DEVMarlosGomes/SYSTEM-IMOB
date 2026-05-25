@@ -62,6 +62,11 @@ async def ensure_indexes() -> None:
     await db.payments.create_index([("locatario_id", 1), ("data_vencimento", -1)])
     await db.payments.create_index([("locador_id", 1), ("data_vencimento", -1)])
     await db.chat_messages.create_index([("locador_id", 1), ("created_at", 1)])
+    await db.notifications.create_index([("recipient_id", 1), ("created_at", -1)])
+    await db.notifications.create_index([("recipient_id", 1), ("lida", 1)])
+    await db.fichas_locatario.create_index([("tenant_id", 1), ("status", 1)])
+    await db.fichas_locatario.create_index([("corretor_id", 1), ("created_at", -1)])
+    await db.fichas_locatario.create_index([("cliente1.email", 1)])
 
 
 # ---------------------------------------------------------------------------

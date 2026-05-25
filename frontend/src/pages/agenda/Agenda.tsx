@@ -5,7 +5,7 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import ptBrLocale from '@fullcalendar/core/locales/pt-br'
 import toast from 'react-hot-toast'
-import { Plus, CalendarDays } from 'lucide-react'
+import { Plus, CalendarDays, Printer } from 'lucide-react'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Modal } from '@/components/common/Modal'
@@ -45,6 +45,72 @@ function addHour(h: string): string {
   return `${String(hh + 1).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  agendado: '#1B3A5C',
+  realizado: '#2D7A4F',
+  cancelado: '#B03A2E',
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  agendado: 'Agendado',
+  realizado: 'Realizado',
+  cancelado: 'Cancelado',
+}
+
+// ── Week PDF export ───────────────────────────────────────────────────────────
+function exportWeekPDF(appts: Appointment[], startOfWeek: Date, corretorMap: Record<string, string>) {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek)
+    d.setDate(d.getDate() + i)
+    return d
+  })
+  const weekStr = `${days[0].toLocaleDateString('pt-BR')} – ${days[6].toLocaleDateString('pt-BR')}`
+
+  const byDay: Record<string, Appointment[]> = {}
+  days.forEach(d => { byDay[d.toISOString().slice(0, 10)] = [] })
+  appts.forEach(a => { if (byDay[a.data]) byDay[a.data].push(a) })
+
+  const rows = days.map(d => {
+    const key = d.toISOString().slice(0, 10)
+    const label = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
+    const items = (byDay[key] || []).sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio))
+    const itemsHtml = items.length === 0
+      ? '<div style="color:#aaa;font-size:11px;padding:4px 0">Sem agendamentos</div>'
+      : items.map(a => `
+        <div style="margin:4px 0;padding:6px 10px;border-radius:6px;background:${STATUS_COLORS[a.status]}22;border-left:3px solid ${STATUS_COLORS[a.status]}">
+          <div style="font-weight:600;font-size:12px">${a.hora_inicio}–${a.hora_fim} · ${a.nome_cliente}</div>
+          ${a.observacoes ? `<div style="font-size:11px;color:#555;margin-top:2px">${a.observacoes}</div>` : ''}
+          ${corretorMap[a.corretor_id] ? `<div style="font-size:10px;color:#888;margin-top:2px">Corretor: ${corretorMap[a.corretor_id]}</div>` : ''}
+        </div>`).join('')
+    return `<tr><td style="padding:10px;border-bottom:1px solid #eee;vertical-align:top;width:120px;font-weight:600;font-size:12px;color:#1B3A5C">${label}</td><td style="padding:10px;border-bottom:1px solid #eee">${itemsHtml}</td></tr>`
+  }).join('')
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"/>
+<title>Agenda da Semana — ${weekStr}</title>
+<style>* { margin:0; padding:0; box-sizing:border-box; } body { font-family:Arial,sans-serif; font-size:13px; padding:30px 40px; }
+.header { display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #B8923A; padding-bottom:10px; margin-bottom:20px; }
+.logo { font-size:20px; font-weight:bold; } .logo span { color:#B8923A; }
+@media print { .no-print { display:none; } }
+</style></head>
+<body>
+<div class="header">
+  <div class="logo">Imob<span>Vip</span> · Agenda</div>
+  <div style="font-size:12px;color:#555">Semana: ${weekStr}</div>
+</div>
+<table style="width:100%;border-collapse:collapse">${rows}</table>
+<div style="text-align:center;font-size:9px;color:#aaa;margin-top:30px">
+  ImobVip Consultoria Imobiliária — CRECI 41.440-J
+</div>
+<script>window.onload=()=>window.print()</script>
+</body></html>`
+
+  const win = window.open('', '_blank')
+  if (win) { win.document.write(html); win.document.close() }
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 export default function AgendaPage() {
   const { user } = useAuth()
   const [appts, setAppts] = useState<Appointment[]>([])
@@ -56,6 +122,13 @@ export default function AgendaPage() {
   const [form, setForm] = useState<FormState>(emptyForm())
   const [conflict, setConflict] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
+    const d = new Date()
+    const day = d.getDay()
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1))
+    d.setHours(0, 0, 0, 0)
+    return d
+  })
 
   async function load() {
     setLoading(true)
@@ -76,13 +149,18 @@ export default function AgendaPage() {
 
   useEffect(() => { void load() /* eslint-disable-next-line */ }, [filterCorretor])
 
+  const corretorMap = useMemo(
+    () => Object.fromEntries(corretores.map(c => [c.id, c.nome])),
+    [corretores],
+  )
+
   const events = useMemo(
     () => appts.map((a) => ({
       id: a.id,
       title: a.nome_cliente,
       start: `${a.data}T${a.hora_inicio}:00`,
       end: `${a.data}T${a.hora_fim}:00`,
-      backgroundColor: a.status === 'cancelado' ? '#B03A2E' : a.status === 'realizado' ? '#2D7A4F' : '#1B3A5C',
+      backgroundColor: STATUS_COLORS[a.status] ?? '#1B3A5C',
       borderColor: 'transparent',
       textColor: '#FFFFFF',
       extendedProps: { ...a },
@@ -135,7 +213,7 @@ export default function AgendaPage() {
       await load()
     } catch (e: any) {
       if (e?.response?.status === 409) {
-        setConflict(e.response.data?.detail || 'Conflito de horario.')
+        setConflict(e.response.data?.detail || 'Conflito de horário.')
       } else {
         toast.error('Erro ao salvar agendamento.')
       }
@@ -156,23 +234,45 @@ export default function AgendaPage() {
   return (
     <AppLayout>
       <PageHeader
-        eyebrow="Operacao"
+        eyebrow="Operação"
         title="Agenda"
-        description={user?.role === 'corretor' ? 'Suas visitas e compromissos. Horarios entre 09h e 17h.' : 'Agenda consolidada de todos os corretores. Filtre por profissional.'}
+        description={user?.role === 'corretor' ? 'Suas visitas e compromissos.' : 'Agenda consolidada de todos os corretores. Filtre por profissional.'}
         actions={
-          <button className="btn-gold" onClick={() => openNew()}><Plus size={16}/> Novo agendamento</button>
+          <div className="flex items-center gap-2">
+            <button
+              className="btn-outline flex items-center gap-2"
+              onClick={() => exportWeekPDF(appts, currentWeekStart, corretorMap)}
+            >
+              <Printer size={15}/> Exportar semana
+            </button>
+            <button className="btn-gold flex items-center gap-2" onClick={() => openNew()}>
+              <Plus size={16}/> Novo agendamento
+            </button>
+          </div>
         }
       />
 
-      {user?.role === 'admin' && (
-        <div className="flex items-center gap-2 mb-4">
-          <div className="text-sm text-ink-secondary">Filtrar por corretor:</div>
-          <select className="input-premium max-w-xs" value={filterCorretor} onChange={(e) => setFilterCorretor(e.target.value)}>
-            <option value="">Todos</option>
-            {corretores.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-          </select>
+      {/* Admin filter + legend */}
+      <div className="flex flex-wrap items-center gap-4 mb-4">
+        {user?.role === 'admin' && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-ink-secondary">Corretor:</span>
+            <select className="input-premium max-w-xs" value={filterCorretor} onChange={(e) => setFilterCorretor(e.target.value)}>
+              <option value="">Todos</option>
+              {corretores.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+            </select>
+          </div>
+        )}
+        {/* Status legend */}
+        <div className="flex items-center gap-3 ml-auto">
+          {Object.entries(STATUS_COLORS).map(([k, color]) => (
+            <span key={k} className="flex items-center gap-1.5 text-xs text-ink-secondary">
+              <span className="inline-block w-3 h-3 rounded-sm" style={{ background: color }} />
+              {STATUS_LABELS[k]}
+            </span>
+          ))}
         </div>
-      )}
+      </div>
 
       <div className="card-premium p-3 md:p-5">
         {loading ? <LoadingScreen /> : (
@@ -193,6 +293,11 @@ export default function AgendaPage() {
             nowIndicator
             slotDuration="01:00:00"
             firstDay={1}
+            datesSet={(arg) => {
+              const d = new Date(arg.start)
+              d.setHours(0, 0, 0, 0)
+              setCurrentWeekStart(d)
+            }}
           />
         )}
         {!loading && appts.length === 0 && (
@@ -206,7 +311,7 @@ export default function AgendaPage() {
         open={open}
         onClose={() => setOpen(false)}
         title={form.id ? 'Editar agendamento' : 'Novo agendamento'}
-        description="Slots disponiveis das 09h as 17h. Validamos conflitos automaticamente."
+        description="Slots disponíveis das 09h às 17h. Validamos conflitos automaticamente."
         size="md"
         footer={
           <>
@@ -222,9 +327,9 @@ export default function AgendaPage() {
             <input className="input-premium" value={form.nome_cliente} onChange={(e) => setForm({ ...form, nome_cliente: e.target.value })} data-testid="appt-nome" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Imovel</label>
+            <label className="block text-sm font-medium mb-1">Imóvel</label>
             <select className="input-premium" value={form.property_id || ''} onChange={(e) => setForm({ ...form, property_id: e.target.value || undefined })}>
-              <option value="">Sem imovel vinculado</option>
+              <option value="">Sem imóvel vinculado</option>
               {properties.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
             </select>
           </div>
@@ -237,13 +342,40 @@ export default function AgendaPage() {
               </select>
             </div>
           )}
+
+          {/* Status inline — editável */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Status</label>
+            <div className="flex gap-2">
+              {(['agendado', 'realizado', 'cancelado'] as const).map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setForm({ ...form, status: s })}
+                  className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  style={form.status === s ? {
+                    background: STATUS_COLORS[s],
+                    color: '#fff',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  } : {
+                    background: `${STATUS_COLORS[s]}18`,
+                    color: STATUS_COLORS[s],
+                    border: `1px solid ${STATUS_COLORS[s]}40`,
+                  }}
+                >
+                  {STATUS_LABELS[s]}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">Data</label>
               <input type="date" className="input-premium" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Inicio</label>
+              <label className="block text-sm font-medium mb-1">Início</label>
               <select className="input-premium" value={form.hora_inicio} onChange={(e) => setForm({ ...form, hora_inicio: e.target.value, hora_fim: addHour(e.target.value) })}>
                 {['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'].map((h) => <option key={h} value={h}>{h}</option>)}
               </select>
@@ -256,7 +388,7 @@ export default function AgendaPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Observacoes</label>
+            <label className="block text-sm font-medium mb-1">Observações</label>
             <textarea className="input-premium min-h-[80px]" value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
           </div>
           {conflict && <div className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-md px-3 py-2">{conflict}</div>}

@@ -22,19 +22,39 @@ def _add_hour(hora: str) -> str:
     return dt.strftime("%H:%M")
 
 
-async def _has_conflict(corretor_id: str, data: str, hora_inicio: str, hora_fim: str, exclude_id: Optional[str] = None) -> bool:
-    flt = {"corretor_id": corretor_id, "data": data, "status": {"$ne": "cancelado"}}
-    if exclude_id:
-        flt["id"] = {"$ne": exclude_id}
-    same_day = await db.appointments.find(flt, {"_id": 0}).to_list(50)
+def _overlaps(h0: time, h1: time, a0: time, a1: time) -> bool:
+    return h0 < a1 and a0 < h1
+
+
+async def _has_conflict(
+    corretor_id: str,
+    data: str,
+    hora_inicio: str,
+    hora_fim: str,
+    exclude_id: Optional[str] = None,
+    property_id: Optional[str] = None,
+) -> tuple[bool, str]:
+    """Returns (has_conflict, reason). Checks both corretor and property double-booking."""
     h0 = _parse_time(hora_inicio)
     h1 = _parse_time(hora_fim)
-    for a in same_day:
-        a0 = _parse_time(a["hora_inicio"])
-        a1 = _parse_time(a["hora_fim"])
-        if h0 < a1 and a0 < h1:
-            return True
-    return False
+    base_flt: dict = {"data": data, "status": {"$ne": "cancelado"}}
+    if exclude_id:
+        base_flt["id"] = {"$ne": exclude_id}
+
+    # 1) Corretor conflict — corretor cannot be in two places at once
+    corretor_day = await db.appointments.find({**base_flt, "corretor_id": corretor_id}, {"_id": 0}).to_list(50)
+    for a in corretor_day:
+        if _overlaps(h0, h1, _parse_time(a["hora_inicio"]), _parse_time(a["hora_fim"])):
+            return True, "Conflito de horário: o corretor já tem um agendamento neste intervalo."
+
+    # 2) Property conflict — same property cannot have two visits at the same time
+    if property_id:
+        prop_day = await db.appointments.find({**base_flt, "property_id": property_id}, {"_id": 0}).to_list(50)
+        for a in prop_day:
+            if _overlaps(h0, h1, _parse_time(a["hora_inicio"]), _parse_time(a["hora_fim"])):
+                return True, "Conflito de horário: este imóvel já possui uma visita agendada neste intervalo."
+
+    return False, ""
 
 
 @router.get("")
@@ -72,8 +92,9 @@ async def create_appointment(payload: AppointmentUpsert, current: AuthUser = Dep
         corretor_id = current.id
 
     hora_fim = payload.hora_fim or _add_hour(payload.hora_inicio)
-    if await _has_conflict(corretor_id, payload.data, payload.hora_inicio, hora_fim):
-        raise HTTPException(409, "Conflito de horario: ja existe agendamento neste intervalo.")
+    conflict, reason = await _has_conflict(corretor_id, payload.data, payload.hora_inicio, hora_fim, property_id=payload.property_id)
+    if conflict:
+        raise HTTPException(409, reason)
 
     doc = Appointment(
         tenant_id=current.tenant_id,
@@ -101,8 +122,9 @@ async def update_appointment(app_id: str, payload: AppointmentUpsert, current: A
     if current.role not in ("corretor", "admin", "superadmin"):
         raise HTTPException(403, "Acesso negado.")
     hora_fim = payload.hora_fim or _add_hour(payload.hora_inicio)
-    if await _has_conflict(a["corretor_id"], payload.data, payload.hora_inicio, hora_fim, exclude_id=app_id):
-        raise HTTPException(409, "Conflito de horario: ja existe agendamento neste intervalo.")
+    conflict, reason = await _has_conflict(a["corretor_id"], payload.data, payload.hora_inicio, hora_fim, exclude_id=app_id, property_id=payload.property_id)
+    if conflict:
+        raise HTTPException(409, reason)
     updates = {
         "nome_cliente": payload.nome_cliente,
         "property_id": payload.property_id,

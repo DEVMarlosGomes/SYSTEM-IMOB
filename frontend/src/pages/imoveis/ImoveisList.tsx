@@ -87,7 +87,24 @@ export default function ImoveisList() {
 
 function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${active ? 'bg-navy text-white border-navy' : 'bg-white text-ink border-line hover:border-navy'}`}>{label}</button>
+    <button
+      onClick={onClick}
+      className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+      style={active ? {
+        background: 'linear-gradient(135deg, #2E5F8A 0%, #1B3A5C 100%)',
+        color: '#FFFFFF',
+        border: '1px solid rgba(27,58,92,0.50)',
+        boxShadow: '0 2px 8px rgba(27,58,92,0.20)',
+      } : {
+        background: 'rgba(255,255,255,0.65)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        color: '#1A1A2E',
+        border: '1px solid rgba(226,221,214,0.70)',
+      }}
+    >
+      {label}
+    </button>
   )
 }
 

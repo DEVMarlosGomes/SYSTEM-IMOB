@@ -35,13 +35,14 @@ export function variantForPropertyStatus(s: string): Props['variant'] {
 
 export function variantForPaymentLocatario(s: string): Props['variant'] {
   if (s === 'pago') return 'success'
-  if (s === 'atrasado') return 'danger'
+  if (s === 'atrasado' || s === 'rejeitado') return 'danger'
   if (s === 'comprovante_enviado') return 'navy'
   return 'warning'
 }
 
 export function variantForPaymentLocador(s: string): Props['variant'] {
   if (s === 'pago') return 'success'
+  if (s === 'enviado') return 'gold'
   if (s === 'gerando_impostos') return 'warning'
   return 'navy'
 }

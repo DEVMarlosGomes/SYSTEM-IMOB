@@ -98,6 +98,7 @@ export function statusLocatarioLabel(s: string) {
     comprovante_enviado: 'Comprovante enviado',
     pago: 'Pago',
     atrasado: 'Atrasado',
+    rejeitado: 'Rejeitado',
   }
   return map[s] || s
 }
@@ -106,6 +107,7 @@ export function statusLocadorLabel(s: string) {
   const map: Record<string, string> = {
     em_esteira: 'Em esteira',
     gerando_impostos: 'Gerando impostos',
+    enviado: 'Enviado',
     pago: 'Pago',
   }
   return map[s] || s

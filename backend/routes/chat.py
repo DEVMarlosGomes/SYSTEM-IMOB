@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, Query, status
 from jose import JWTError
@@ -23,6 +24,22 @@ from ws_manager import chat_manager
 logger = logging.getLogger("imobsys.chat")
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+# ── WebSocket rate limit: 10 messages / 10 seconds per user ──────────────────
+_ws_timestamps: dict[str, list[datetime]] = defaultdict(list)
+_WS_MAX = 10
+_WS_WINDOW_SEC = 10
+
+
+def _check_ws_rate(user_id: str) -> bool:
+    """Return True if allowed, False if rate-limited."""
+    now = datetime.utcnow()
+    window = now - timedelta(seconds=_WS_WINDOW_SEC)
+    _ws_timestamps[user_id] = [t for t in _ws_timestamps[user_id] if t > window]
+    if len(_ws_timestamps[user_id]) >= _WS_MAX:
+        return False
+    _ws_timestamps[user_id].append(now)
+    return True
 
 
 def _channel_for(locador_id: str) -> str:
@@ -48,16 +65,23 @@ async def list_conversations(current: AuthUser = Depends(get_current_user)):
 
 
 @router.get("/messages/{locador_id}")
-async def list_messages(locador_id: str, current: AuthUser = Depends(get_current_user)):
+async def list_messages(
+    locador_id: str,
+    page: int = Query(1, ge=1),
+    limit: int = Query(100, ge=1, le=500),
+    current: AuthUser = Depends(get_current_user),
+):
     if current.role == "locador" and current.id != locador_id:
         raise HTTPException(403, "Acesso negado.")
-    rows = await db.chat_messages.find({"locador_id": locador_id}, {"_id": 0}).sort("created_at", 1).to_list(2000)
-    # mark messages as read (those not sent by current user)
+    skip = (page - 1) * limit
+    rows = await db.chat_messages.find({"locador_id": locador_id}, {"_id": 0}) \
+        .sort("created_at", 1).skip(skip).to_list(limit)
+    total = await db.chat_messages.count_documents({"locador_id": locador_id})
     await db.chat_messages.update_many(
         {"locador_id": locador_id, "remetente_id": {"$ne": current.id}, "lida": False},
         {"$set": {"lida": True}},
     )
-    return serialize(rows)
+    return {"items": serialize(rows), "total": total, "page": page, "limit": limit}
 
 
 @router.post("/messages")
@@ -116,6 +140,9 @@ async def chat_ws(websocket: WebSocket, locador_id: str, token: str = Query(defa
                     data = {"mensagem": raw}
                 mensagem = (data.get("mensagem") or "").strip()
                 if not mensagem:
+                    continue
+                if not _check_ws_rate(user["id"]):
+                    await websocket.send_text(json.dumps({"type": "error", "detail": "Rate limit: aguarde alguns segundos."}))
                     continue
                 msg = ChatMessage(
                     tenant_id=user.get("tenant_id") or "",

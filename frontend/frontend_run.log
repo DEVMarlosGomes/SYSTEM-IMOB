@@ -1,0 +1,37 @@
+yarn run v1.22.22
+$ vite --host 0.0.0.0 --port 3000
+
+  [32m[1mVITE[22m v8.0.14[39m  [2mready in [0m[1m463[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m3000[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.15.42:[1m3000[22m/[39m
+[2m11:11:51[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [optimizer] scanning dependencies...
+[2m11:11:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [optimizer] bundling dependencies...
+[2m11:15:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m11:16:52[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/auth/Login.tsx[22m
+[2m11:16:57[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/auth/Login.tsx[22m
+[2m11:29:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/imoveis/ImovelForm.tsx[22m
+[2m11:29:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/imoveis/ImovelForm.tsx[22m
+[2m11:29:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/imoveis/ImovelForm.tsx[22m
+[2m11:30:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m11:41:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m11:41:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/Dashboard.tsx, /src/components/layout/Sidebar.tsx, /src/components/common/NotificationBell.tsx, /src/pages/imoveis/ImoveisList.tsx, /src/pages/imoveis/ImovelForm.tsx, /src/pages/admin/Corretores.tsx, /src/pages/admin/CRMLocatarios.tsx[22m
+[2m11:41:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/Dashboard.tsx, /src/components/layout/Sidebar.tsx, /src/components/common/NotificationBell.tsx, /src/pages/imoveis/ImoveisList.tsx, /src/pages/imoveis/ImovelForm.tsx, /src/pages/admin/Corretores.tsx, /src/pages/admin/CRMLocatarios.tsx[22m
+[2m11:42:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/Corretores.tsx[22m
+[2m11:44:16[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/AppRouter.tsx, /src/index.css[22m
+[2m11:44:23[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/AppRouter.tsx, /src/index.css[22m
+[2m11:58:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/Corretores.tsx[22m
+[2m11:58:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/Corretores.tsx[22m
+[2m11:58:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/Corretores.tsx[22m
+[2m12:01:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m12:02:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/CorretorDetalhes.tsx[22m
+[2m12:02:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/CorretorDetalhes.tsx[22m
+[2m12:02:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/CorretorDetalhes.tsx[22m
+[2m12:02:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/CorretorDetalhes.tsx[22m
+[2m12:05:28[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/CorretorDetalhes.tsx[22m
+[2m12:05:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/CorretorDetalhes.tsx[22m
+[2m12:05:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/CorretorDetalhes.tsx[22m
+[2m12:06:07[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/CorretorDetalhes.tsx[22m
+[2m12:06:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/CorretorDetalhes.tsx[22m
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.

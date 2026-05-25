@@ -132,7 +132,7 @@ export default function ImovelDetalhes() {
 
 function Spec({ icon, label, value }: { icon: any; label: string; value: any }) {
   return (
-    <div className="flex items-center gap-2 p-2.5 rounded-md border border-line bg-white">
+    <div className="flex items-center gap-2 p-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(226,221,214,0.65)' }}>
       <div className="h-8 w-8 rounded-md bg-navy-50 text-navy flex items-center justify-center">{icon}</div>
       <div>
         <div className="text-[11px] uppercase text-ink-muted">{label}</div>

@@ -15,6 +15,7 @@ const AgendaPage = lazy(() => import('@/pages/agenda/Agenda'))
 const CRMLocatarios = lazy(() => import('@/pages/admin/CRMLocatarios'))
 const CRMLocadores = lazy(() => import('@/pages/admin/CRMLocadores'))
 const Corretores = lazy(() => import('@/pages/admin/Corretores'))
+const CorretorDetalhes = lazy(() => import('@/pages/admin/CorretorDetalhes'))
 const Financeiro = lazy(() => import('@/pages/admin/Financeiro'))
 const Contratos = lazy(() => import('@/pages/contratos/Contratos'))
 const ContratoForm = lazy(() => import('@/pages/contratos/ContratoForm'))
@@ -25,6 +26,11 @@ const LocadorPortal = lazy(() => import('@/pages/locador/Portal'))
 const LocadorFinanceiro = lazy(() => import('@/pages/locador/Financeiro'))
 const LocadorChat = lazy(() => import('@/pages/locador/Chat'))
 const AdminChat = lazy(() => import('@/pages/admin/AdminChat'))
+const FichasLocatarios = lazy(() => import('@/pages/locatarios/FichasLocatarios'))
+const Relatorios = lazy(() => import('@/pages/admin/Relatorios'))
+const NovoLocatario = lazy(() => import('@/pages/locatarios/NovoLocatario'))
+const DetalhesLocatario = lazy(() => import('@/pages/locatarios/DetalhesLocatario'))
+const EditarLocatario = lazy(() => import('@/pages/locatarios/EditarLocatario'))
 
 function RootRedirect() {
   const { user, hydrated } = useAuth()
@@ -50,6 +56,7 @@ export function AppRouter() {
         <Route path="/admin/imoveis/:id" element={<PrivateRoute allowedRoles={["admin","corretor"]}><ImovelDetalhes /></PrivateRoute>} />
         <Route path="/admin/imoveis/:id/editar" element={<PrivateRoute allowedRoles={["admin","corretor"]}><ImovelForm /></PrivateRoute>} />
         <Route path="/admin/corretores" element={<PrivateRoute allowedRoles={["admin"]}><Corretores /></PrivateRoute>} />
+        <Route path="/admin/corretores/:id" element={<PrivateRoute allowedRoles={["admin"]}><CorretorDetalhes /></PrivateRoute>} />
         <Route path="/admin/crm/locatarios" element={<PrivateRoute allowedRoles={["admin"]}><CRMLocatarios /></PrivateRoute>} />
         <Route path="/admin/crm/locadores" element={<PrivateRoute allowedRoles={["admin"]}><CRMLocadores /></PrivateRoute>} />
         <Route path="/admin/agenda" element={<PrivateRoute allowedRoles={["admin"]}><AgendaPage /></PrivateRoute>} />
@@ -58,6 +65,11 @@ export function AppRouter() {
         <Route path="/admin/contratos/novo" element={<PrivateRoute allowedRoles={["admin","corretor"]}><ContratoForm /></PrivateRoute>} />
         <Route path="/admin/contratos/:id" element={<PrivateRoute allowedRoles={["admin","corretor","locatario","locador"]}><ContratoDetalhes /></PrivateRoute>} />
         <Route path="/admin/chat" element={<PrivateRoute allowedRoles={["admin"]}><AdminChat /></PrivateRoute>} />
+        <Route path="/admin/relatorios" element={<PrivateRoute allowedRoles={["admin"]}><Relatorios /></PrivateRoute>} />
+        <Route path="/admin/fichas-locatario" element={<PrivateRoute allowedRoles={["admin"]}><FichasLocatarios /></PrivateRoute>} />
+        <Route path="/admin/fichas-locatario/novo" element={<PrivateRoute allowedRoles={["admin"]}><NovoLocatario /></PrivateRoute>} />
+        <Route path="/admin/fichas-locatario/:id" element={<PrivateRoute allowedRoles={["admin"]}><DetalhesLocatario /></PrivateRoute>} />
+        <Route path="/admin/fichas-locatario/:id/editar" element={<PrivateRoute allowedRoles={["admin"]}><EditarLocatario /></PrivateRoute>} />
 
         {/* Corretor */}
         <Route path="/corretor" element={<PrivateRoute allowedRoles={["corretor"]}><CorretorDashboard /></PrivateRoute>} />
@@ -69,6 +81,10 @@ export function AppRouter() {
         <Route path="/corretor/contratos" element={<PrivateRoute allowedRoles={["corretor"]}><Contratos /></PrivateRoute>} />
         <Route path="/corretor/contratos/novo" element={<PrivateRoute allowedRoles={["corretor"]}><ContratoForm /></PrivateRoute>} />
         <Route path="/corretor/contratos/:id" element={<PrivateRoute allowedRoles={["corretor"]}><ContratoDetalhes /></PrivateRoute>} />
+        <Route path="/corretor/fichas-locatario" element={<PrivateRoute allowedRoles={["corretor"]}><FichasLocatarios /></PrivateRoute>} />
+        <Route path="/corretor/fichas-locatario/novo" element={<PrivateRoute allowedRoles={["corretor"]}><NovoLocatario /></PrivateRoute>} />
+        <Route path="/corretor/fichas-locatario/:id" element={<PrivateRoute allowedRoles={["corretor"]}><DetalhesLocatario /></PrivateRoute>} />
+        <Route path="/corretor/fichas-locatario/:id/editar" element={<PrivateRoute allowedRoles={["corretor"]}><EditarLocatario /></PrivateRoute>} />
 
         {/* Locatario */}
         <Route path="/locatario" element={<PrivateRoute allowedRoles={["locatario"]}><LocatarioPortal /></PrivateRoute>} />

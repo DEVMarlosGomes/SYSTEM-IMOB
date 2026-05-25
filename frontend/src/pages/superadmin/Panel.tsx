@@ -41,7 +41,7 @@ export default function SuperadminPanel() {
           <h3 className="font-display text-lg mb-3 flex items-center gap-2"><Building2 className="text-gold"/> Imobiliarias</h3>
           <ul className="space-y-2">
             {tenants.map((t) => (
-              <li key={t.id} className="flex items-center justify-between p-3 border border-line rounded-md">
+              <li key={t.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(226,221,214,0.60)' }}>
                 <div>
                   <div className="font-medium">{t.nome}</div>
                   <div className="text-xs text-ink-secondary">{t.cnpj || 'CNPJ nao informado'} · {t.telefone || '—'}</div>
@@ -55,7 +55,7 @@ export default function SuperadminPanel() {
           <h3 className="font-display text-lg mb-3 flex items-center gap-2"><UserCog className="text-gold"/> Usuarios</h3>
           <ul className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin">
             {users.map((u) => (
-              <li key={u.id} className="flex items-center gap-3 p-2 border border-line rounded-md">
+              <li key={u.id} className="flex items-center gap-3 p-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(226,221,214,0.60)' }}>
                 <Avatar name={u.nome} size={32}/>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm truncate">{u.nome}</div>

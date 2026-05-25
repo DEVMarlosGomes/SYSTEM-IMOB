@@ -1,0 +1,10 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\MARLOS\\Documents\\IMOBVIPSYSTEM\\SYSTEM-IMOB\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [10140] using WatchFiles
+INFO:     Started server process [14820]
+INFO:     Waiting for application startup.
+2026-05-24 11:11:34,605 | INFO | imobsys | Starting ImobSys backend…
+2026-05-24 11:11:34,966 | INFO | imobsys.seed | Seed completed (idempotent).
+2026-05-24 11:11:34,967 | INFO | imobsys | ImobSys backend ready.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'models.py'. Reloading...

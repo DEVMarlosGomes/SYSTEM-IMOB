@@ -17,6 +17,7 @@ from core import (
     serialize,
 )
 from models import PaymentUpdate
+from routes.notifications import create_notification
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -75,12 +76,17 @@ async def list_payments(
 
 
 @router.get("/kanban")
-async def kanban(current: AuthUser = Depends(require_roles("admin", "superadmin", "corretor"))):
+async def kanban(
+    mes_referencia: Optional[str] = None,
+    current: AuthUser = Depends(require_roles("admin", "superadmin", "corretor")),
+):
     """Return payments grouped by dia de vencimento (5/10/15/20/25/30)."""
     flt = await get_tenant_filter(current)
     if current.role == "corretor":
         contracts = await db.contracts.find({"corretor_id": current.id}, {"_id": 0, "id": 1}).to_list(1000)
         flt["contract_id"] = {"$in": [c["id"] for c in contracts]}
+    if mes_referencia:
+        flt["mes_referencia"] = mes_referencia
     rows = await db.payments.find(flt, {"_id": 0}).sort("data_vencimento", 1).to_list(5000)
     rows = await _enrich_payments(rows)
     today = date.today().isoformat()
@@ -124,6 +130,22 @@ async def set_comprovante_locatario(payment_id: str, body: dict, current: AuthUs
         "comprovante_locatario_url": url,
         "status_locatario": "comprovante_enviado",
     }})
+    # Notify all admins of this tenant that a comprovante was submitted
+    admins = await db.users.find(
+        {"tenant_id": p.get("tenant_id"), "role": {"$in": ["admin", "superadmin"]}},
+        {"_id": 0, "id": 1},
+    ).to_list(50)
+    locatario = await db.users.find_one({"id": p["locatario_id"]}, {"_id": 0, "nome": 1})
+    locatario_nome = (locatario or {}).get("nome", "Locatário")
+    for admin in admins:
+        await create_notification(
+            tenant_id=p.get("tenant_id", ""),
+            recipient_id=admin["id"],
+            type="comprovante_enviado",
+            title="Comprovante enviado",
+            body=f"{locatario_nome} enviou comprovante de pagamento — {p.get('mes_referencia', '')}.",
+            link="/admin/pagamentos",
+        )
     return serialize(await db.payments.find_one({"id": payment_id}, {"_id": 0}))
 
 
@@ -139,6 +161,44 @@ async def approve_payment(payment_id: str, current: AuthUser = Depends(require_r
         "status_locador": "em_esteira",
         "data_repasse_prevista": payout_date.isoformat(),
     }})
+    # Notify locatário and locador of the approval
+    await create_notification(
+        tenant_id=p.get("tenant_id", ""),
+        recipient_id=p["locatario_id"],
+        type="pagamento_aprovado",
+        title="Pagamento aprovado",
+        body=f"Seu pagamento de {p.get('mes_referencia', '')} foi confirmado. Repasse previsto: {payout_date.isoformat()}.",
+        link="/locatario/pagamentos",
+    )
+    await create_notification(
+        tenant_id=p.get("tenant_id", ""),
+        recipient_id=p["locador_id"],
+        type="pagamento_aprovado",
+        title="Repasse agendado",
+        body=f"O aluguel de {p.get('mes_referencia', '')} foi pago. Repasse previsto para {payout_date.isoformat()}.",
+        link="/locador/portal",
+    )
+    return serialize(await db.payments.find_one({"id": payment_id}, {"_id": 0}))
+
+
+@router.post("/{payment_id}/rejeitar")
+async def reject_payment(payment_id: str, body: dict, current: AuthUser = Depends(require_roles("admin", "superadmin"))):
+    motivo = body.get("motivo") or "Comprovante inválido ou ilegível."
+    p = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not p:
+        raise HTTPException(404, "Pagamento nao encontrado.")
+    await db.payments.update_one({"id": payment_id}, {"$set": {
+        "status_locatario": "rejeitado",
+        "motivo_rejeicao": motivo,
+    }})
+    await create_notification(
+        tenant_id=p.get("tenant_id", ""),
+        recipient_id=p["locatario_id"],
+        type="info",
+        title="Comprovante rejeitado",
+        body=f"Seu comprovante de {p.get('mes_referencia', '')} foi rejeitado. Motivo: {motivo}. Por favor, envie novamente.",
+        link="/locatario/pagamentos",
+    )
     return serialize(await db.payments.find_one({"id": payment_id}, {"_id": 0}))
 
 

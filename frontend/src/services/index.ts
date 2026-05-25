@@ -1,5 +1,6 @@
 import { api } from '@/lib/api'
-import type { Property, OwnerProfile, User, Appointment, Contract, Payment, PaymentKanban, AdminDashboard, CorretorDashboard, CRMLocatario, CRMLocador, ChatMessage, ChatConversation, Tenant } from '@/types'
+import type { Property, OwnerProfile, User, Appointment, Contract, Payment, PaymentKanban, AdminDashboard, CorretorDashboard, CRMLocatario, CRMLocador, ChatMessage, ChatConversation, Tenant, Notification, Comissao, CorretorStats } from '@/types'
+import type { FichaLocatario, FichaLocatarioCreate } from '@/types/locatario.types'
 
 // -------- properties --------
 export const propertyService = {
@@ -47,9 +48,10 @@ export const contractService = {
 // -------- payments --------
 export const paymentService = {
   list: async (params?: Record<string, any>) => (await api.get<Payment[]>('/payments', { params })).data,
-  kanban: async () => (await api.get<PaymentKanban>('/payments/kanban')).data,
+  kanban: async (mes_referencia?: string) => (await api.get<PaymentKanban>('/payments/kanban', { params: mes_referencia ? { mes_referencia } : {} })).data,
   uploadComprovante: async (payment_id: string, url: string) => (await api.post<Payment>(`/payments/${payment_id}/upload-comprovante`, { url })).data,
   approve: async (payment_id: string) => (await api.post<Payment>(`/payments/${payment_id}/aprovar`)).data,
+  rejeitar: async (payment_id: string, motivo: string) => (await api.post<Payment>(`/payments/${payment_id}/rejeitar`, { motivo })).data,
   update: async (payment_id: string, payload: any) => (await api.put<Payment>(`/payments/${payment_id}`, payload)).data,
 }
 
@@ -81,8 +83,50 @@ export const uploadService = {
 // -------- chat --------
 export const chatService = {
   conversations: async () => (await api.get<ChatConversation[]>('/chat/conversations')).data,
-  messages: async (locador_id: string) => (await api.get<ChatMessage[]>(`/chat/messages/${locador_id}`)).data,
+  messages: async (locador_id: string, page = 1, limit = 100): Promise<ChatMessage[]> => {
+    const res = await api.get(`/chat/messages/${locador_id}`, { params: { page, limit } })
+    const data = res.data
+    return Array.isArray(data) ? data : (data.items ?? [])
+  },
   send: async (locador_id: string, mensagem: string) => (await api.post<ChatMessage>('/chat/messages', { locador_id, mensagem })).data,
+}
+
+// -------- fichas locatário --------
+export const fichaLocatarioService = {
+  list: async (params?: { status?: string; search?: string; page?: number; limit?: number }) =>
+    (await api.get<{ items: FichaLocatario[]; total: number; page: number; limit: number }>('/fichas-locatario', { params })).data,
+  get: async (id: string) => (await api.get<FichaLocatario>(`/fichas-locatario/${id}`)).data,
+  create: async (payload: FichaLocatarioCreate) =>
+    (await api.post<FichaLocatario>('/fichas-locatario', payload)).data,
+  update: async (id: string, payload: Partial<FichaLocatario>) =>
+    (await api.put<FichaLocatario>(`/fichas-locatario/${id}`, payload)).data,
+  savePdfUrl: async (id: string, url: string) =>
+    (await api.post(`/fichas-locatario/${id}/ficha-pdf-url`, { url })).data,
+  uploadAssinatura1: async (id: string, url: string) =>
+    (await api.post(`/fichas-locatario/${id}/assinatura-cliente1`, { url })).data,
+  uploadAssinatura2: async (id: string, url: string) =>
+    (await api.post(`/fichas-locatario/${id}/assinatura-cliente2`, { url })).data,
+  vincularContrato: async (id: string, contrato_id: string) =>
+    (await api.patch(`/fichas-locatario/${id}/vincular-contrato`, { contrato_id })).data,
+}
+
+// -------- corretores --------
+export const corretorService = {
+  stats: async (corretorId: string) => (await api.get<CorretorStats>(`/corretores/${corretorId}/stats`)).data,
+  comissoes: async (corretorId: string) => (await api.get<Comissao[]>(`/corretores/${corretorId}/comissoes`)).data,
+  createComissao: async (corretorId: string, payload: Omit<Comissao, 'id' | 'tenant_id' | 'created_at'>) =>
+    (await api.post<Comissao>(`/corretores/${corretorId}/comissoes`, payload)).data,
+  updateComissao: async (comissaoId: string, payload: Partial<Comissao>) =>
+    (await api.put<Comissao>(`/corretores/comissoes/${comissaoId}`, payload)).data,
+  deleteComissao: async (comissaoId: string) =>
+    (await api.delete(`/corretores/comissoes/${comissaoId}`)).data,
+}
+
+// -------- notifications --------
+export const notificationService = {
+  list: async () => (await api.get<Notification[]>('/notifications')).data,
+  markRead: async (id: string) => (await api.post(`/notifications/${id}/read`)).data,
+  markAllRead: async () => (await api.post('/notifications/read-all')).data,
 }
 
 // -------- tenants --------

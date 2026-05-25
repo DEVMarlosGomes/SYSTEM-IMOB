@@ -9,13 +9,34 @@ Responsibilities:
 """
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
+import logging.config
 from contextlib import asynccontextmanager
+from datetime import date
 from pathlib import Path
 
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
+
+
+class _JSONFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        data: dict = {
+            "timestamp": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
+            "level": record.levelname,
+            "name": record.name,
+            "message": record.getMessage(),
+        }
+        for key in ("user_id", "tenant_id", "action"):
+            if hasattr(record, key):
+                data[key] = getattr(record, key)
+        if record.exc_info:
+            data["exc"] = self.formatException(record.exc_info)
+        return json.dumps(data, ensure_ascii=False)
 
 from core import settings, db, ensure_indexes
 from seed import run_seed
@@ -31,9 +52,41 @@ from routes.dashboard import router as dashboard_router
 from routes.uploads import router as uploads_router
 from routes.chat import router as chat_router
 from routes.tenants import router as tenants_router
+from routes.notifications import router as notifications_router
+from routes.fichas_locatario import router as fichas_locatario_router
+from routes.corretores import router as corretores_router
+from routes.reports import router as reports_router
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
+_json_handler = logging.StreamHandler()
+_json_handler.setFormatter(_JSONFormatter())
+logging.root.setLevel(logging.INFO)
+logging.root.handlers = [_json_handler]
 logger = logging.getLogger("imobsys")
+
+
+async def _overdue_notifier():
+    """Background task: every hour, notify locatários with overdue payments (once per payment)."""
+    from routes.notifications import create_notification
+    while True:
+        try:
+            today = date.today().isoformat()
+            overdue = await db.payments.find(
+                {"status_locatario": "pendente", "data_vencimento": {"$lt": today}, "overdue_notified": {"$ne": True}},
+                {"_id": 0},
+            ).to_list(500)
+            for p in overdue:
+                await create_notification(
+                    tenant_id=p.get("tenant_id", ""),
+                    recipient_id=p["locatario_id"],
+                    type="info",
+                    title="Pagamento em atraso",
+                    body=f"Seu aluguel de {p.get('mes_referencia', '')} está vencido desde {p['data_vencimento']}. Regularize para evitar multas.",
+                    link="/locatario/pagamentos",
+                )
+                await db.payments.update_one({"id": p["id"]}, {"$set": {"overdue_notified": True}})
+        except Exception:
+            pass
+        await asyncio.sleep(3600)  # check every hour
 
 
 @asynccontextmanager
@@ -41,8 +94,10 @@ async def lifespan(_: FastAPI):
     logger.info("Starting ImobSys backend…")
     await ensure_indexes()
     await run_seed()
+    task = asyncio.create_task(_overdue_notifier())
     logger.info("ImobSys backend ready.")
     yield
+    task.cancel()
     db.client.close()
     logger.info("ImobSys backend stopped.")
 
@@ -56,6 +111,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next) -> Response:
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self' ws: wss:;"
+    )
+    return response
 
 # Static files for uploaded media (served under /api/uploads/*)
 UPLOADS_DIR = Path("/app/backend/uploads")
@@ -93,5 +166,9 @@ api.include_router(crm_router)
 api.include_router(dashboard_router)
 api.include_router(uploads_router)
 api.include_router(chat_router)
+api.include_router(notifications_router)
+api.include_router(fichas_locatario_router)
+api.include_router(corretores_router)
+api.include_router(reports_router)
 
 app.include_router(api)

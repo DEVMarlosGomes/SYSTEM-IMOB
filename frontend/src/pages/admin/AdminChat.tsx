@@ -26,6 +26,11 @@ export default function AdminChat() {
     if (!selected) return
     const id = (selected as any).id || selected.locador_id!
     void chatService.messages(id).then(setMessages)
+    // clear unread badge immediately on selection
+    setConvs((prev) => prev.map((c) => {
+      const cid = (c as any).id || c.locador_id
+      return cid === id ? { ...c, unread: 0 } : c
+    }))
   }, [selected])
 
   useEffect(() => {
@@ -62,12 +67,12 @@ export default function AdminChat() {
       {loading ? <LoadingScreen /> : convs.length === 0 ? <EmptyState icon={<MessageSquare size={24}/>} description="Nenhum locador cadastrado." /> : (
         <div className="card-premium grid grid-cols-1 md:grid-cols-[280px_1fr] h-[72vh] overflow-hidden">
           {/* sidebar conversas */}
-          <aside className="border-r border-line overflow-y-auto scrollbar-thin bg-surface">
+          <aside className="overflow-y-auto scrollbar-thin" style={{ borderRight: '1px solid rgba(226,221,214,0.50)', background: 'rgba(248,247,244,0.60)' }}>
             {convs.map((c) => {
               const id = (c as any).id || c.locador_id
               const active = selected && (((selected as any).id || selected.locador_id) === id)
               return (
-                <button key={id} onClick={() => setSelected(c)} className={`w-full flex items-center gap-3 px-3 py-3 border-b border-line text-left hover:bg-white ${active ? 'bg-white' : ''}`}>
+                <button key={id} onClick={() => setSelected(c)} className="w-full flex items-center gap-3 px-3 py-3 text-left transition-all" style={{ borderBottom: '1px solid rgba(226,221,214,0.40)', background: active ? 'rgba(255,255,255,0.80)' : 'transparent' }} onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.50)' }} onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}>
                   <Avatar name={c.nome} size={36} />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-ink truncate">{c.nome}</div>
@@ -79,13 +84,13 @@ export default function AdminChat() {
             })}
           </aside>
           <div className="flex flex-col">
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-surface scrollbar-thin">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin" style={{ background: 'rgba(248,247,244,0.40)' }}>
               {messages.map((m) => {
                 const mine = m.remetente_id === user?.id
                 return (
                   <div key={m.id} className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
                     {!mine && <Avatar name={m.remetente_nome || 'Locador'} size={28} />}
-                    <div className={`max-w-[70%] rounded-2xl px-3.5 py-2 text-sm shadow-soft ${mine ? 'bg-navy text-white rounded-br-sm' : 'bg-white text-ink border border-line rounded-bl-sm'}`}>
+                    <div className={`max-w-[70%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'rounded-br-sm' : 'rounded-bl-sm'}`} style={mine ? { background: 'linear-gradient(135deg, #2E5F8A 0%, #1B3A5C 100%)', color: '#FFFFFF', boxShadow: '0 4px 12px rgba(27,58,92,0.25)' } : { background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.60)', boxShadow: '0 2px 8px rgba(15,34,56,0.06)', color: '#1A1A2E' }}>
                       <div className="text-[11px] opacity-70 mb-0.5">{m.remetente_nome || (mine ? 'Voce' : 'Locador')}</div>
                       <div>{m.mensagem}</div>
                       <div className="text-[10px] opacity-60 mt-1 text-right">{new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
@@ -94,7 +99,7 @@ export default function AdminChat() {
                 )
               })}
             </div>
-            <div className="p-3 border-t border-line bg-white flex items-center gap-2">
+            <div className="p-3 flex items-center gap-2" style={{ borderTop: '1px solid rgba(226,221,214,0.50)', background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
               <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') send() }} className="input-premium flex-1" placeholder="Escreva uma mensagem…" />
               <button onClick={send} className="btn-primary"><Send size={16}/> Enviar</button>
             </div>
